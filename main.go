@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -13,6 +14,7 @@ func main() {
 	}
 	defer file.Close()
 	b := make([]byte, 8)
+	line := "read: "
 	for {
 		n, err := file.Read(b)
 		if err == io.EOF {
