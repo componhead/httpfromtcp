@@ -23,7 +23,6 @@ func main() {
 			fmt.Println(s)
 		}
 	}
-	fmt.Println("Connection closed")
 }
 
 func getLinesChannel(f io.ReadCloser) <-chan string {
@@ -34,12 +33,10 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 		for {
 			n, err := f.Read(b)
 			res := string(b[:n])
-			if err == io.EOF {
-				if n > 0 {
+			if err != nil {
+				if len(buff) > 0 {
 					chnl <- strings.Join(buff, "")
 				}
-			}
-			if err != nil {
 				close(chnl)
 				f.Close()
 				break
