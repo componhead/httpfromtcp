@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
-	"strings"
+
+	"github.com/componhead/httpfromtcp/internal/request"
 )
 
 func main() {
@@ -19,39 +19,10 @@ func main() {
 			fmt.Println("Error creating listener")
 		}
 		fmt.Println("Connection accepted")
-		for s := range getLinesChannel(conn) {
-			fmt.Println(s)
+		r, err := request.RequestFromReader(conn)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
 		}
+		fmt.Printf("Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n", r.RequestLine.Method, r.RequestLine.RequestTarget, r.RequestLine.HttpVersion)
 	}
-}
-
-func getLinesChannel(f io.ReadCloser) <-chan string {
-	b := make([]byte, 8)
-	chnl := make(chan string)
-	go func() {
-		buff := []string{}
-		for {
-			n, err := f.Read(b)
-			res := string(b[:n])
-			if err != nil {
-				if len(buff) > 0 {
-					chnl <- strings.Join(buff, "")
-				}
-				close(chnl)
-				f.Close()
-				break
-			}
-			if n > 0 {
-				s := strings.Split(res, "\n")
-				if len(s) > 0 {
-					buff = append(buff, s[0])
-					for i := 1; i < len(s); i++ {
-						chnl <- strings.Join(buff, "")
-						buff = []string{s[i]}
-					}
-				}
-			}
-		}
-	}()
-	return chnl
 }

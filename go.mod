@@ -1,4 +1,4 @@
-module httpfromtcp
+module github.com/componhead/httpfromtcp
 
 go 1.25.3
 
