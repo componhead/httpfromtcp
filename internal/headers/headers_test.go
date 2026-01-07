@@ -14,11 +14,11 @@ func NewHeaders() Headers {
 func TestParseHeader(t *testing.T) {
 	// Test: Valid single header
 	headers := NewHeaders()
-	data := []byte("Host: localhost:42069\r\n\r\n")
+	data := []byte("HOSt: localhost:42069\r\n\r\n")
 	n, done, err := headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	assert.Equal(t, 23, n)
 	assert.False(t, done)
 
@@ -28,7 +28,7 @@ func TestParseHeader(t *testing.T) {
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	assert.Equal(t, 29, n)
 	assert.False(t, done)
 
@@ -37,7 +37,7 @@ func TestParseHeader(t *testing.T) {
 	headers["Host"] = "localhost:0"
 	data = []byte("Host: localhost:42069\r\n")
 	n, done, err = headers.Parse(data)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	assert.Equal(t, 23, n)
 	assert.False(t, done)
 
@@ -45,7 +45,7 @@ func TestParseHeader(t *testing.T) {
 	headers = NewHeaders()
 	data = []byte("Host: localhost:42069\r\n")
 	n, done, err = headers.Parse(data)
-	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "localhost:42069", headers["host"])
 	data = []byte("\r\n")
 	n, done, err = headers.Parse(data)
 	assert.True(t, done)
@@ -53,6 +53,22 @@ func TestParseHeader(t *testing.T) {
 	// Test: Invalid spacing header
 	headers = NewHeaders()
 	data = []byte("       Host : localhost:42069       \r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.Error(t, err)
+	assert.Equal(t, 0, n)
+	assert.False(t, done)
+
+	// Test: Valid header with uppercase
+	headers = NewHeaders()
+	data = []byte("HoST: localhost:42069\r\n")
+	n, done, err = headers.Parse(data)
+	assert.Equal(t, "localhost:42069", headers["host"])
+	assert.Equal(t, 23, n)
+	assert.False(t, done)
+
+	// Test: Invalid header with unsupported char
+	headers = NewHeaders()
+	data = []byte("H@st: localhost:42069\r\n\r\n")
 	n, done, err = headers.Parse(data)
 	require.Error(t, err)
 	assert.Equal(t, 0, n)

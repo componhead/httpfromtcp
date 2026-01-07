@@ -31,8 +31,15 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if key == "" {
 		return 0, false, fmt.Errorf("error: malformed key header")
 	} else {
-		value := strings.Trim(s[1], " ")
-		h[key] = value
-		return len(line) + 2, false, nil
+		key = strings.ToLower(key)
+		runes := []rune(key)
+		for i := range runes {
+			if runes[i] < 33 || runes[i] == 34 || (runes[i] > 39 && runes[i] < 42) || runes[i] == 44 || runes[i] == 47 || (runes[i] > 57 && runes[i] < 94) || (runes[i] > 122 && runes[i] != 124 && runes[i] != 126) {
+				return 0, false, fmt.Errorf("error: malformed key header: %c\n", key[i])
+			}
+		}
 	}
+	value := strings.Trim(s[1], " ")
+	h[key] = value
+	return len(line) + 2, false, nil
 }
