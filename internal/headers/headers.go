@@ -40,6 +40,11 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		}
 	}
 	value := strings.Trim(s[1], " ")
-	h[key] = value
+	v := h[key]
+	if v != "" {
+		h[key] = fmt.Sprintf("%s, %s", v, value)
+	} else {
+		h[key] = value
+	}
 	return len(line) + 2, false, nil
 }
