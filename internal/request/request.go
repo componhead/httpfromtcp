@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/componhead/httpfromtcp/internal/headers"
@@ -12,6 +13,7 @@ import (
 const (
 	requestStateInitialized requestState = iota
 	requestStateParsingHeaders
+	requestStateParsingBody
 	requestStateDone
 )
 
@@ -22,6 +24,7 @@ type requestState int
 type Request struct {
 	RequestLine RequestLine
 	Headers     headers.Headers
+	Body        []byte
 	state       requestState
 }
 
@@ -112,6 +115,30 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			bytesRead = b
 			break
 		}
+	case requestStateParsingBody:
+		{
+			l, exists := r.Headers["Content-Length"]
+			if !exists {
+				r.state = requestStateDone
+				break
+			}
+			cl, err := strconv.Atoi(l)
+			if err != nil {
+				return 0, fmt.Errorf("content length not in numeric format: %s\n", l)
+			}
+			bodyLength := len(r.Body) + len(data)
+			if cl < bodyLength {
+				return 0, fmt.Errorf("body exceeds content length: %s/%d\n", l, bodyLength)
+			}
+			r.Body = append(r.Body, data...)
+			bytesRead = len(data)
+			if bodyLength == cl {
+				r.state = requestStateDone
+				fmt.Printf("All data received: %s\n", l)
+				break
+			}
+			break
+		}
 	case requestStateParsingHeaders:
 		{
 			i, done, err := r.Headers.Parse(data)
@@ -119,7 +146,7 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 				return i, err
 			}
 			if done == true {
-				r.state = requestStateDone
+				r.state = requestStateParsingBody
 			}
 			bytesRead = i
 			break
